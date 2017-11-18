@@ -16,6 +16,8 @@
 
 package lk.ac.mrt.cse.dbs.simpleexpensemanager.data;
 
+import android.database.sqlite.SQLiteTransactionListener;
+
 import java.util.List;
 
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.exception.InvalidAccountException;
@@ -26,7 +28,7 @@ import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.ExpenseType;
  * AccountDAO interface can be used to access the account details, including listing, adding, updating, removing
  * accounts and updating account balance.
  */
-public interface AccountDAO {
+public interface AccountDAO{
 
     /***
      * Get a list of account numbers.
