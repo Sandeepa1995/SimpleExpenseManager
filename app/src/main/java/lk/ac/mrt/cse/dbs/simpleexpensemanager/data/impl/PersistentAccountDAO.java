@@ -21,39 +21,30 @@ import android.database.sqlite.SQLiteOpenHelper;
  * Created by Damitha on 11/17/2017.
  */
 
-public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO {
+public class PersistentAccountDAO implements AccountDAO {
     private static final String TAG="PersistentAccountDAO";
 
-    private static final String TABLE_NAME = "account_150359E";
+    private static final String TABLE_NAME = "account";
     private static final String COL1 = "account_no";
     private static final String COL2 = "bank_name";
     private static final String COL3 = "account_holder_name";
     private static final String COL4 = "balance";
 
-//    private final Map<String, Account> accounts;
+    public static DatabaseHelper dbhelper;
 
     public PersistentAccountDAO(Context context) {
-        super(context,TABLE_NAME,null,1);
-//        this.accounts = new HashMap<>();
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db){
-        String createTable = "CREATE TABLE " + TABLE_NAME + " ("+COL1+" TEXT PRIMARY KEY, " +
-                COL2 + " TEXT, " + COL3 + " TEXT, " + COL4 + " REAL)";
-        db.execSQL(createTable);
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db,int i, int i1){
-        db.execSQL("DROP IF TABLE EXISTS "+ TABLE_NAME);
-        onCreate(db);
+        if (PersistentTransactionDAO.dbhelper==null){
+            dbhelper=new DatabaseHelper(context);
+        }
+        else {
+            this.dbhelper=PersistentTransactionDAO.dbhelper;
+        }
     }
 
 
     @Override
     public List<String> getAccountNumbersList() {
-        SQLiteDatabase db=this.getReadableDatabase();
+        SQLiteDatabase db=this.dbhelper.getReadableDatabase();
         String query = "SELECT " + COL1 + " FROM " + TABLE_NAME;
         Cursor data = db.rawQuery(query,null);
         ArrayList<String> dataList = new ArrayList<String>();
@@ -66,7 +57,7 @@ public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO
 
     @Override
     public List<Account> getAccountsList() {
-        SQLiteDatabase db=this.getReadableDatabase();
+        SQLiteDatabase db=this.dbhelper.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME;
         Cursor data = db.rawQuery(query,null);
         ArrayList<Account> dataList = new ArrayList<Account>();
@@ -83,7 +74,7 @@ public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO
 
     @Override
     public Account getAccount(String accountNo) throws InvalidAccountException {
-        SQLiteDatabase db=this.getReadableDatabase();
+        SQLiteDatabase db=this.dbhelper.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + COL1 +"=?";
         Cursor data = db.rawQuery(query,new String[] { accountNo });
         Account account=new Account("","","",0);
@@ -102,7 +93,7 @@ public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO
 
     @Override
     public void addAccount(Account account) {
-        SQLiteDatabase db=this.getWritableDatabase();
+        SQLiteDatabase db=this.dbhelper.getWritableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + COL1 +"=?";
         Cursor data = db.rawQuery(query,new String[] { account.getAccountNo() });
         if (data.getCount()==0){
@@ -123,7 +114,7 @@ public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO
             String msg = "Account " + accountNo + " is invalid.";
             throw new InvalidAccountException(msg);
         }
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.dbhelper.getWritableDatabase();
         String queryE = "DELETE FROM " + TABLE_NAME +" WHERE " + COL1 +"=?";
         db.execSQL(queryE,new String[] { accountNo });
     }
@@ -135,7 +126,7 @@ public class PersistentAccountDAO extends SQLiteOpenHelper implements AccountDAO
             String msg = "Account " + accountNo + " is invalid.";
             throw new InvalidAccountException(msg);
         }
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.dbhelper.getWritableDatabase();
         switch (expenseType) {
             case EXPENSE:
                 String queryE = "UPDATE " + TABLE_NAME + " SET "+ COL4 +" =? WHERE " + COL1 +"=?";

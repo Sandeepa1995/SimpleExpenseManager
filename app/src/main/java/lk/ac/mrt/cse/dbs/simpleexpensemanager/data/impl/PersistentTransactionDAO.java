@@ -43,39 +43,31 @@ import static lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.ExpenseType.INCO
  * This is an In-Memory implementation of TransactionDAO interface. This is not a persistent storage. All the
  * transaction logs are stored in a LinkedList in memory.
  */
-public class PersistentTransactionDAO extends SQLiteOpenHelper implements TransactionDAO {
+public class PersistentTransactionDAO implements TransactionDAO {
 //    private final List<Transaction> transactions;
     private static final String TAG="PersistentTransactionDAO";
 
-    private static final String TABLE_NAME = "transact_150359E";
+    private static final String TABLE_NAME = "transact";
     private static final String COL1 = "date";
     private static final String COL2 = "account_no";
     private static final String COL3 = "expense_type";
     private static final String COL4 = "amount";
 
+    public static DatabaseHelper dbhelper;
+
     public PersistentTransactionDAO(Context context) {
-        super(context,TABLE_NAME,null,1);
-//        transactions = new LinkedList<>();
+        if (PersistentAccountDAO.dbhelper==null){
+            dbhelper=new DatabaseHelper(context);
+        }
+        else {
+            this.dbhelper=PersistentAccountDAO.dbhelper;
+        }
     }
 
-    @Override
-    public void onCreate(SQLiteDatabase db){
-        String createTable = "CREATE TABLE " + TABLE_NAME + " ("+COL1+" TEXT, " +
-                COL2 + " TEXT, " + COL3 + " TEXT, " + COL4 + " REAL, PRIMARY KEY ("+ COL1+","+COL2+"), FOREIGN KEY ("+COL2+") REFERENCES account ("+COL2+"))";
-//        String createTable = "CREATE TABLE " + TABLE_NAME + " ("+COL1+" TEXT PRIMARY KEY, " +
-//                COL2 + " TEXT, " + COL3 + " TEXT, " + COL4 + " REAL)";
-        db.execSQL(createTable);
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db,int i, int i1){
-        db.execSQL("DROP IF TABLE EXISTS "+ TABLE_NAME);
-        onCreate(db);
-    }
 
     @Override
     public void logTransaction(Date date, String accountNo, ExpenseType expenseType, double amount) {
-        SQLiteDatabase db=this.getWritableDatabase();
+        SQLiteDatabase db=this.dbhelper.getWritableDatabase();
         ContentValues conval = new ContentValues();
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //Or whatever format fits best your needs.
@@ -92,7 +84,7 @@ public class PersistentTransactionDAO extends SQLiteOpenHelper implements Transa
 
     @Override
     public List<Transaction> getAllTransactionLogs() {
-        SQLiteDatabase db=this.getReadableDatabase();
+        SQLiteDatabase db=this.dbhelper.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME;
         Cursor data = db.rawQuery(query,null);
         ArrayList<Transaction> dataList = new ArrayList<Transaction>();
@@ -123,7 +115,7 @@ public class PersistentTransactionDAO extends SQLiteOpenHelper implements Transa
 
     @Override
     public List<Transaction> getPaginatedTransactionLogs(int limit) {
-        SQLiteDatabase db=this.getReadableDatabase();
+        SQLiteDatabase db=this.dbhelper.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME;
         Cursor data = db.rawQuery(query,null);
         ArrayList<Transaction> dataList = new ArrayList<Transaction>();
@@ -152,7 +144,6 @@ public class PersistentTransactionDAO extends SQLiteOpenHelper implements Transa
         if (size <= limit) {
             return dataList;
         }
-        // return the last <code>limit</code> number of transaction logs
         return dataList.subList(size - limit, size);
     }
 
